@@ -1,58 +1,35 @@
 import Head from "next/head";
 import { useState, useEffect } from "react";
-import { ethers } from "ethers";
-import MyGov from "../artifacts/contracts/mygov.sol/MyGov.json";
-
-const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+import { useWallet } from "../hooks/useWallet";
 
 export default function Home() {
-  const [contract, setContract] = useState(null);
+  const { account, balance, contract, connectWallet } = useWallet();
 
-  const [account, setAccount] = useState("");
+  const [users, setUsers] = useState([]);
 
-  const [functionList, setFunctionList] = useState({});
+  const [userId, setUserId] = useState("");
 
-  const handleClick = async () => {
-    try {
-      if (window !== "undefined" && window.ethereum !== "undefined") {
-        await window.ethereum.enable();
-        let accounts = await window.ethereum.request({
-          method: "eth_requestAccounts",
-        });
-        setAccount(accounts);
-      } else {
-        alert("Please install metamask !");
-      }
-    } catch (error) {
-      alert(error.message);
-    }
+  const [noOfSurveys, setNoOfSurveys] = useState(null);
+
+  const handleNoOfSurveys = () => {
+    contract.getNoOfSurveys().then((resp) => setNoOfSurveys(resp));
   };
 
-  async function getSurvey() {
-    if (contract) {
-      try {
-        const data = await contract.users(
-          "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
-        );
-        console.log("Deneme", data);
-      } catch (error) {
-        console.log(error);
-      }
+  const getUser = async (e) => {
+    e.preventDefault();
+    if (!userId) {
+      alert("Please input userId");
+      return;
     }
-  }
+    contract
+      .users(userId)
+      .then((resp) => setUsers(resp))
+      .catch((error) => alert(error));
+  };
 
-  useEffect(() => {
-    if (typeof window.ethereum !== "undefined") {
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-      const contract = new ethers.Contract(
-        contractAddress,
-        MyGov.abi,
-        provider
-      );
-      setContract(contract);
-      setFunctionList(contract);
-    }
-  }, []);
+  const handleChangeInput = (e) => {
+    setUserId(e.target.value);
+  };
 
   return (
     <>
@@ -63,23 +40,56 @@ export default function Home() {
       <div className="container">
         <nav className="navbar navbar-light bg-light">
           <a className="navbar-brand">Web 3.0</a>
-          <button className="btn btn-primary" onClick={handleClick}>
+          <button className="btn btn-primary" onClick={connectWallet}>
             Connect Metamask
           </button>
         </nav>
+
         <div>
-          <h3>Account Name: {account}</h3>
-          <button className="btn btn-success" onClick={getSurvey}>
-            List
-          </button>
-          {Object.entries(functionList).map((list, index) => {
-            return (
-              <p key={index}>
-                {" "}
-                Function: {list[0]} - Type: {typeof list[1]}
-              </p>
-            );
-          })}
+          <div>
+            <h6>Account Name: {account}</h6>
+            <h6>Account Name: {balance}</h6>
+
+            <hr />
+          </div>
+
+          <div>
+            {users.length > 0 && (
+              <div>
+                <p>{`Used faucet: ${users.UsedFaucet}`}</p>
+                <p>{`My Gov Tokens: ${users.myGovTokens._hex}`}</p>
+                <p>{`My Gov Tokens Locked Until: ${users.myGovTokensLockedUntil._hex}`}</p>
+              </div>
+            )}
+            <form className="form">
+              <div className="d-flex">
+                <input
+                  className="form-control"
+                  onChange={handleChangeInput}
+                  placeholder="User Id"
+                />
+
+                <button className="btn btn-info ms-2" onClick={getUser}>
+                  {"GetUser"}
+                </button>
+              </div>
+            </form>
+            <hr />
+          </div>
+
+          <div>
+            {noOfSurveys && (
+              <div>
+                <p>{`Hex: ${noOfSurveys._hex}`}</p>
+                <p>{`Is Big Number: ${noOfSurveys._isBigNumber}`}</p>
+              </div>
+            )}
+
+            <button className="btn btn-info" onClick={handleNoOfSurveys}>
+              Get No Of Surveys
+            </button>
+            <hr />
+          </div>
         </div>
       </div>
     </>
