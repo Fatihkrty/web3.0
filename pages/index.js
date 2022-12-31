@@ -3,9 +3,11 @@ import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import MyGov from "../artifacts/contracts/mygov.sol/MyGov.json";
 
-const contractAddress = "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0";
+const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
 
 export default function Home() {
+  const [contract, setContract] = useState(null);
+
   const [account, setAccount] = useState("");
 
   const [functionList, setFunctionList] = useState({});
@@ -26,25 +28,15 @@ export default function Home() {
     }
   };
 
-  async function getAllFunctionList() {
-    if (typeof window.ethereum !== "undefined") {
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-      const contract = new ethers.Contract(
-        contractAddress,
-        MyGov.abi,
-        provider
-      );
-
-      setFunctionList(contract);
-
-      // Fonksiyon isimlerine göre alt tarafta contract.FONKSIYON_ISMI şeklinde datalar çekilebilir
-      // ve yeni datalar set edilebilir
-
+  async function getSurvey() {
+    if (contract) {
       try {
-        const data = await contract.getNoOfSurveys();
-        console.log("data: ", data);
-      } catch (err) {
-        console.log("Error: ", err);
+        const data = await contract.users(
+          "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+        );
+        console.log("Deneme", data);
+      } catch (error) {
+        console.log(error);
       }
     }
   }
@@ -57,6 +49,7 @@ export default function Home() {
         MyGov.abi,
         provider
       );
+      setContract(contract);
       setFunctionList(contract);
     }
   }, []);
@@ -76,11 +69,10 @@ export default function Home() {
         </nav>
         <div>
           <h3>Account Name: {account}</h3>
-          <button className="btn btn-success" onClick={getAllFunctionList}>
+          <button className="btn btn-success" onClick={getSurvey}>
             List
           </button>
           {Object.entries(functionList).map((list, index) => {
-            console.log(list, index);
             return (
               <p key={index}>
                 {" "}
